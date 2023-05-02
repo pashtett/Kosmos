@@ -1,4 +1,5 @@
 import arcade
+from arcade.application import Window
 import arcade.gui
 import math
 SCREEN_WIDTH = 1000
@@ -18,7 +19,6 @@ class Player(arcade.Sprite):
         self.speed = 0
         self.max_speed = 4
         self.drag = 0.05
-        self.respawning = 0 
     def update(self):
         if self.speed > 0:
             self.speed -= self.drag
@@ -53,17 +53,25 @@ class Player(arcade.Sprite):
         if self.top > SCREEN_HEIGHT:
             self.bottom = 0
         super().update()
-                 
-    
+class GameOver(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.texture =arcade.load_texture("fotka")
+        arcade.set_viewport(0, SCREEN_WIDTH -1, 0, SCREEN_HEIGHT -1)
+    def on_draw(self):
+        self.clear()
+        self.texture.draw_sized(SCREEN_WIDTH /2, SCREEN_HEIGHT /2,
+                                SCREEN_WIDTH, SCREEN_HEIGHT)
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        game_view=GameView()
+        game_view.setup()
+        self.window.show_view(game_view)    
 
-class MyGame(arcade.Window):
+class GameView(arcade.View):
 
 
     def __init__(self):
-
-        
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-
+        super().__init__()
         arcade.set_background_color(arcade.csscolor.NAVY)
         self.player_list= None
         self.player_sprite = None
@@ -132,8 +140,10 @@ class MyGame(arcade.Window):
 
 
 def main():
-    window = MyGame()
-    window.setup()
+    window = arcade.Window(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_TITLE)
+    start_view=GameView()
+    window.show_view(start_view)
+    start_view.setup()
     arcade.run()
 
 
