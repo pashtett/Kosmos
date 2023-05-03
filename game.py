@@ -14,6 +14,11 @@ BULLET_DAMAGE=10
 INDICATOR_BAR_OFFSET=32
 SPRITE_SCALING_LASER=0.8
 BULLET_SPEED=8
+OFFSCREEN_SPACE = 300
+LEFT_LIMIT = -OFFSCREEN_SPACE
+RIGHT_LIMIT = SCREEN_WIDTH + OFFSCREEN_SPACE
+BOTTOM_LIMIT = -OFFSCREEN_SPACE
+TOP_LIMIT = SCREEN_HEIGHT + OFFSCREEN_SPACE
 
 class TurningSprite(arcade.Sprite):
     def update(self):
@@ -126,7 +131,7 @@ class IndicatorBar:
     def fullness(self, new_fullness: float) -> None:
         """Sets the fullness of the bar."""
         # Check if new_fullness if valid
-        if not (0.0 <= new_fullness <= 10.0):
+        if not (-10.0 <= new_fullness <= 10.0):
             raise ValueError(
                 f"Got {new_fullness}, but fullness must be between 0.0 and 1.0."
             )
@@ -172,6 +177,22 @@ class GameOver(arcade.View):
         game_view=GameView()
         game_view.setup()
         self.window.show_view(game_view)   
+class meeleMons(arcade.Sprite):
+    def follow_sprite (self,player_sprite):
+        self.center_x +=self.change_x
+        self.center_y +=self.change_y
+        if random.randrange(100) ==0:
+            start_x =self.center_x
+            start_y=self.center_y
+
+            dest_x =player_sprite.center_x
+            dest_y = player_sprite.center_y
+
+            x_diff = dest_x-start_x
+            y_diff = dest_y-start_y
+            angle = math.atan2(y_diff, x_diff)
+            self.change_x= math.cos(angle)*4
+            self.change_y= math.cos(angle)*4
 
 
 class GameView(arcade.View):
@@ -190,12 +211,14 @@ class GameView(arcade.View):
         self.bar_list=None
         self.planet_list=None
         self.planet_sprite=None
+        self.mons_list=None
 
     def setup(self):
         self.player_list = arcade.SpriteList()
         self.bullet_list=arcade.SpriteList()
         self.bar_list=arcade.SpriteList()
         self.planet_list=arcade.SpriteList()
+        self.mons_list=arcade.SpriteList()
         
         
         image_source= ":resources:images/space_shooter/playerShip1_blue.png"
@@ -208,12 +231,17 @@ class GameView(arcade.View):
         planet.center_x=random.randrange(SCREEN_WIDTH)
         planet.center_y= random.randrange(130,SCREEN_WIDTH)
         self.planet_list.append(planet)
+        enemy=meeleMons(":resources:images/space_shooter/playerShip1_green.png")
+        enemy.center_x=random.randrange(SCREEN_WIDTH)
+        enemy.center_y=random.randrange(SCREEN_HEIGHT)    
+        self.mons_list.append(enemy)
     def on_draw(self):
         self.clear()
         self.planet_list.draw()
         self.player_list.draw()
         self.bullet_list.draw()
         self.bar_list.draw()
+        self.mons_list.draw()
     def update_player_speed(self):
 
         # Calculate speed based on the keys pressed
@@ -278,7 +306,7 @@ class GameView(arcade.View):
             self.player_sprite.thrust = 0
         
     def on_update(self, delta_time):
-   
+        self.mons_list.update()
         self.bullet_list.update()
         self.player_list.update()
         self.player_sprite.indicator_bar.position=(
@@ -287,6 +315,9 @@ class GameView(arcade.View):
         )
         if self.player_sprite.health > 50:
                 self.player_sprite.health = 50
+        if self.player_sprite.health <0:
+                self.player_sprite.health = 0
+                arcade.exit()
         for bullet in self.bullet_list:
             size = max(bullet.width, bullet.height)
             if bullet.center_x < 0 - size:
@@ -305,7 +336,15 @@ class GameView(arcade.View):
                 self.player_sprite.indicator_bar.fullness = (
                 self.player_sprite.health / PLAYER_HEALTH
                 )
-            
+        for enemy in self.mons_list:
+            enemy.follow_sprite(self.player_sprite)
+            hit_list=arcade.check_for_collision_with_list(self.player_sprite,self.mons_list)
+        for enemy in hit_list:
+                self.player_sprite.health -= 10.0
+                self.player_sprite.indicator_bar.fullness = (
+                self.player_sprite.health / PLAYER_HEALTH
+                )
+
            
             
         
