@@ -2,6 +2,7 @@ import arcade
 from arcade.application import Window
 import arcade.gui
 import math
+import random
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
 SCREEN_TITLE = "Далекий космос"
@@ -125,7 +126,7 @@ class IndicatorBar:
     def fullness(self, new_fullness: float) -> None:
         """Sets the fullness of the bar."""
         # Check if new_fullness if valid
-        if not (0.0 <= new_fullness <= 1.0):
+        if not (0.0 <= new_fullness <= 10.0):
             raise ValueError(
                 f"Got {new_fullness}, but fullness must be between 0.0 and 1.0."
             )
@@ -187,19 +188,29 @@ class GameView(arcade.View):
         self.down_pressed = False
         self.bullet_list=None
         self.bar_list=None
+        self.planet_list=None
+        self.planet_sprite=None
 
     def setup(self):
         self.player_list = arcade.SpriteList()
         self.bullet_list=arcade.SpriteList()
         self.bar_list=arcade.SpriteList()
+        self.planet_list=arcade.SpriteList()
+        
         
         image_source= ":resources:images/space_shooter/playerShip1_blue.png"
         self.player_sprite= Player(image_source, CHARACTER_SCALING,self.bar_list)
-        self.player_sprite.center_x
-        self.player_sprite.center_y
+        self.player_sprite.center_x =400
+        self.player_sprite.center_y =400
         self.player_list.append(self.player_sprite)
+        image=":resources:images/space_shooter/meteorGrey_big2.png"
+        planet=arcade.Sprite(image,CHARACTER_SCALING)
+        planet.center_x=random.randrange(SCREEN_WIDTH)
+        planet.center_y= random.randrange(130,SCREEN_WIDTH)
+        self.planet_list.append(planet)
     def on_draw(self):
         self.clear()
+        self.planet_list.draw()
         self.player_list.draw()
         self.bullet_list.draw()
         self.bar_list.draw()
@@ -245,8 +256,8 @@ class GameView(arcade.View):
             self.player_sprite.thrust = 0.15
         elif key == arcade.key.DOWN:
             self.player_sprite.thrust = -.2
-        while self.player_sprite.forward !=0:
-                self.player_sprite.health -= 1
+        if self.player_sprite.forward !=0:
+                self.player_sprite.health -= 0.5
                 self.player_sprite.indicator_bar.fullness = (
                 self.player_sprite.health / PLAYER_HEALTH
         )
@@ -274,7 +285,8 @@ class GameView(arcade.View):
             self.player_sprite.center_x,
             self.player_sprite.center_y +INDICATOR_BAR_OFFSET     
         )
-        
+        if self.player_sprite.health > 50:
+                self.player_sprite.health = 50
         for bullet in self.bullet_list:
             size = max(bullet.width, bullet.height)
             if bullet.center_x < 0 - size:
@@ -285,6 +297,15 @@ class GameView(arcade.View):
                     bullet.remove_from_sprite_lists()
             if bullet.center_y > SCREEN_HEIGHT + size:
                     bullet.remove_from_sprite_lists()
+        for planet in self.planet_list:
+            size = max(planet.width, planet.height)
+            hit_list=arcade.check_for_collision_with_list(self.player_sprite, self.planet_list)
+            if len (hit_list) >0:
+                self.player_sprite.health += 0.5
+                self.player_sprite.indicator_bar.fullness = (
+                self.player_sprite.health / PLAYER_HEALTH
+                )
+            
            
             
         
