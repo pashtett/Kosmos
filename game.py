@@ -3,6 +3,8 @@ from arcade.application import Window
 import arcade.gui
 import math
 import random
+
+from main import ENEMY_ATTACK_COOLDOWN
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
 SCREEN_TITLE = "Далекий космос"
@@ -167,7 +169,7 @@ class IndicatorBar:
 class GameOver(arcade.View):
     def __init__(self):
         super().__init__()
-        self.texture =arcade.load_texture("fotka")
+        self.texture =arcade.load_texture(":resources:images/tiles/stoneMid.png")
         arcade.set_viewport(0, SCREEN_WIDTH -1, 0, SCREEN_HEIGHT -1)
     def on_draw(self):
         self.clear()
@@ -219,6 +221,7 @@ class GameView(arcade.View):
         self.mons_list=None
         self.frame_cont=0
         self.frag_list=None
+        self.gameover=False
     def setup(self):
         self.player_list = arcade.SpriteList()
         self.bullet_list=arcade.SpriteList()
@@ -226,6 +229,7 @@ class GameView(arcade.View):
         self.planet_list=arcade.SpriteList()
         self.mons_list=arcade.SpriteList()
         self.frag_list=arcade.SpriteList
+        self.mons_timer=0
         
         
         image_source= ":resources:images/space_shooter/playerShip1_blue.png"
@@ -269,7 +273,7 @@ class GameView(arcade.View):
             self.player_sprite.change_x = -MOVEMENT_SPEED
         elif self.right_pressed and not self.left_pressed:
             self.player_sprite.change_x = MOVEMENT_SPEED
-        
+        ENEMY_ATTACK_COOLDOWN
     def on_key_press(self, key, modifiers):
         if key==arcade.key.SPACE:
             bullet_sprite = TurningSprite(":resources:images/space_shooter/"
@@ -319,7 +323,7 @@ class GameView(arcade.View):
             self.player_sprite.thrust = 0
         
     def on_update(self, delta_time):
-        
+        self.mons_timer +=delta_time
         self.mons_list.update()
         self.bullet_list.update()
         self.player_list.update()
@@ -331,7 +335,7 @@ class GameView(arcade.View):
                 self.player_sprite.health = 50
         if self.player_sprite.health <0:
                 self.player_sprite.health = 0
-                arcade.exit()
+                self.gameover=True
         for bullet in self.bullet_list:
             size = max(bullet.width, bullet.height)
             if bullet.center_x < 0 - size:
@@ -349,7 +353,9 @@ class GameView(arcade.View):
                 if len(hit_list3)>0:  
                     enemy.remove_from_sprite_lists()
             
-            
+        if self.gameover==True:
+            game_view=GameOver()
+            self.window.show_view(game_view)   
 
 
         for planet in self.planet_list:
@@ -364,12 +370,15 @@ class GameView(arcade.View):
         for enemy in self.mons_list:
             enemy.follow_sprite(self.player_sprite)
             hit_list1=arcade.check_for_collision_with_list(self.player_sprite,self.mons_list)
-            for enemy in hit_list1:
+            if self.mons_timer >=5:
+                self.mons_timer =0
+                for enemy in hit_list1:
                     self.player_sprite.health -= 10.0
                     self.player_sprite.indicator_bar.fullness = (
                     self.player_sprite.health / PLAYER_HEALTH
                     )
-                
+   
+ 
 
            
             
