@@ -179,22 +179,27 @@ class GameOver(arcade.View):
         self.window.show_view(game_view)   
 class meeleMons(arcade.Sprite):
     def follow_sprite (self,player_sprite):
-        self.center_x +=self.change_x
-        self.center_y +=self.change_y
-        if random.randrange(100) ==0:
-            start_x =self.center_x
-            start_y=self.center_y
+        if self.center_y < player_sprite.center_y:
+            self.center_y += min(0.5, player_sprite.center_y - self.center_y)
+        elif self.center_y > player_sprite.center_y:
+            self.center_y -= min(0.5, self.center_y - player_sprite.center_y)
 
-            dest_x =player_sprite.center_x
-            dest_y = player_sprite.center_y
+        if self.center_x < player_sprite.center_x:
+            self.center_x += min(0.5 , player_sprite.center_x - self.center_x)
+        elif self.center_x > player_sprite.center_x:
+            self.center_x -= min(0.5, self.center_x - player_sprite.center_x)
 
-            x_diff = dest_x-start_x
-            y_diff = dest_y-start_y
-            angle = math.atan2(y_diff, x_diff)
-            self.change_x= math.cos(angle)*4
-            self.change_y= math.cos(angle)*4
+class fragMons(arcade.Sprite):
+    def follow_sprite (self,player_sprite):
+        if self.center_y < player_sprite.center_y:
+            self.center_y += min(4, player_sprite.center_y - self.center_y)
+        elif self.center_y > player_sprite.center_y:
+            self.center_y -= min(4, self.center_y - player_sprite.center_y)
 
-
+        if self.center_x < player_sprite.center_x:
+            self.center_x += min(4, player_sprite.center_x - self.center_x)
+        elif self.center_x > player_sprite.center_x:
+            self.center_x -= min(4, self.center_x - player_sprite.center_x)
 class GameView(arcade.View):
 
 
@@ -212,13 +217,15 @@ class GameView(arcade.View):
         self.planet_list=None
         self.planet_sprite=None
         self.mons_list=None
-
+        self.frame_cont=0
+        self.frag_list=None
     def setup(self):
         self.player_list = arcade.SpriteList()
         self.bullet_list=arcade.SpriteList()
         self.bar_list=arcade.SpriteList()
         self.planet_list=arcade.SpriteList()
         self.mons_list=arcade.SpriteList()
+        self.frag_list=arcade.SpriteList
         
         
         image_source= ":resources:images/space_shooter/playerShip1_blue.png"
@@ -231,10 +238,16 @@ class GameView(arcade.View):
         planet.center_x=random.randrange(SCREEN_WIDTH)
         planet.center_y= random.randrange(130,SCREEN_WIDTH)
         self.planet_list.append(planet)
-        enemy=meeleMons(":resources:images/space_shooter/playerShip1_green.png")
-        enemy.center_x=random.randrange(SCREEN_WIDTH)
-        enemy.center_y=random.randrange(SCREEN_HEIGHT)    
-        self.mons_list.append(enemy)
+        for i in range(5):
+           
+            enemy = meeleMons(":resources:images/items/coinGold.png", CHARACTER_SCALING)
+
+          
+            enemy.center_x = random.randrange(SCREEN_WIDTH)
+            enemy.center_y = random.randrange(SCREEN_HEIGHT)
+
+          
+            self.mons_list.append(enemy)
     def on_draw(self):
         self.clear()
         self.planet_list.draw()
@@ -306,6 +319,7 @@ class GameView(arcade.View):
             self.player_sprite.thrust = 0
         
     def on_update(self, delta_time):
+        
         self.mons_list.update()
         self.bullet_list.update()
         self.player_list.update()
@@ -328,6 +342,16 @@ class GameView(arcade.View):
                     bullet.remove_from_sprite_lists()
             if bullet.center_y > SCREEN_HEIGHT + size:
                     bullet.remove_from_sprite_lists()
+            hit_list3=arcade.check_for_collision_with_list(bullet, self.mons_list)
+            if len(hit_list3) > 0:
+                bullet.remove_from_sprite_lists()
+            for enemy in hit_list3:
+                if len(hit_list3)>0:  
+                    enemy.remove_from_sprite_lists()
+            
+            
+
+
         for planet in self.planet_list:
             size = max(planet.width, planet.height)
             hit_list=arcade.check_for_collision_with_list(self.player_sprite, self.planet_list)
@@ -336,14 +360,16 @@ class GameView(arcade.View):
                 self.player_sprite.indicator_bar.fullness = (
                 self.player_sprite.health / PLAYER_HEALTH
                 )
+             
         for enemy in self.mons_list:
             enemy.follow_sprite(self.player_sprite)
-            hit_list=arcade.check_for_collision_with_list(self.player_sprite,self.mons_list)
-        for enemy in hit_list:
-                self.player_sprite.health -= 10.0
-                self.player_sprite.indicator_bar.fullness = (
-                self.player_sprite.health / PLAYER_HEALTH
-                )
+            hit_list1=arcade.check_for_collision_with_list(self.player_sprite,self.mons_list)
+            for enemy in hit_list1:
+                    self.player_sprite.health -= 10.0
+                    self.player_sprite.indicator_bar.fullness = (
+                    self.player_sprite.health / PLAYER_HEALTH
+                    )
+                
 
            
             
